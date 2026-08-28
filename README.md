@@ -1,4 +1,4 @@
-# WinAutoTest — SK1-27E 部件连线检测工具
+# WinAutoTest — Suntek 部件连线检测工具
 
 Windows 产线 GUI 工具，用于检查 SK1-27E（RK3576 / LP6 类）整机的 **LED 状态灯、补光灯、扬声器、麦克风、相机** 是否连线正确、工作正常。
 
