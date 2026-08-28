@@ -1,0 +1,6 @@
+reports/
+__pycache__/
+tests/__pycache__/
+*.pyc
+.pytest_cache/
+led_protocol.txt
