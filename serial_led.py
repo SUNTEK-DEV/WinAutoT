@@ -15,6 +15,8 @@ from dataclasses import dataclass
 import serial
 import serial.tools.list_ports
 
+import i18n
+
 BAUDRATE = 9600
 DEFAULT_READ_TIMEOUT = 0.3
 # 探测 LED 控制器时发送的版本查询指令（字符串格式）
@@ -31,8 +33,10 @@ class LedPort:
 
     @property
     def label(self) -> str:
-        tag = "LED控制器" if self.is_led_controller else "其他设备"
-        return f"{self.device} - {self.description or '未知设备'} ({tag})"
+        import i18n
+        tag = i18n.t("port.led") if self.is_led_controller else i18n.t("port.other")
+        desc = self.description or i18n.t("port.unknown")
+        return f"{self.device} - {desc} ({tag})"
 
 
 def list_serial_ports() -> list[LedPort]:
@@ -100,7 +104,7 @@ class LedController:
 
     def _write(self, data: bytes) -> int:
         if not self.is_open:
-            raise RuntimeError("串口未打开")
+            raise RuntimeError(i18n.t("serial.not_open"))
         return self._serial.write(data)
 
     def _read_reply(self, expect_len: int, settle: float = 0.15) -> bytes:
@@ -116,7 +120,7 @@ class LedController:
         """发送 HEX 指令并返回回显。"""
         n = self._write(data)
         if n != len(data):
-            raise RuntimeError(f"写入不完整: {n}/{len(data)} 字节")
+            raise RuntimeError(i18n.t("serial.write_incomplete", written=n, total=len(data)))
         return self._read_reply(expect_len=len(data))
 
     # ---- 状态灯（HEX 协议） ---------------------------------------------

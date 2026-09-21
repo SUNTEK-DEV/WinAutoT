@@ -82,9 +82,10 @@ class LoopbackResult:
     reason: str = ""
 
     def summary(self) -> str:
+        import i18n
         status = "PASS" if self.passed else "FAIL"
         return (f"[{status}] {self.channel}: RMS={self.recorded_rms:.4f} "
-                f"底噪={self.noise_rms:.4f} SNR={self.snr_db:.1f}dB "
+                f"{i18n.t('audio.noise')}={self.noise_rms:.4f} SNR={self.snr_db:.1f}dB "
                 f"{self.reason}")
 
 
@@ -189,7 +190,8 @@ def run_loopback_test(channel: str = "left",
     channel: "left" / "right" / "both"
     """
     if channel not in ("left", "right", "both"):
-        raise ValueError(f"无效声道: {channel}")
+        import i18n
+        raise ValueError(i18n.t("audio.invalid_channel", channel=channel))
 
     # 1. 录底噪
     noise = _record(0.5, input_device)
@@ -223,14 +225,15 @@ def run_loopback_test(channel: str = "left",
     passed = (signal_rms >= rms_threshold
               and snr_db >= snr_threshold_db
               and tone_ok)
+    import i18n
     if passed:
-        reason = f"拾音正常(1kHz占比{tone_ratio:.0%})"
+        reason = i18n.t("audio.pickup_ok", ratio=tone_ratio)
     elif signal_rms < rms_threshold:
-        reason = f"录音能量过低(<{rms_threshold:.4f})，麦克风未拾到扬声器声"
+        reason = i18n.t("audio.rms_low", threshold=rms_threshold)
     elif not tone_ok:
-        reason = f"未检测到1kHz测试音(峰值bin={peak_bin}, 占比{tone_ratio:.0%})"
+        reason = i18n.t("audio.no_tone", peak=peak_bin, ratio=tone_ratio)
     else:
-        reason = f"信噪比不足(<{snr_threshold_db:.0f}dB)，环境噪声偏大"
+        reason = i18n.t("audio.snr_low", threshold=snr_threshold_db)
 
     return LoopbackResult(
         channel=channel,

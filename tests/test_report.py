@@ -68,3 +68,15 @@ def test_export_txt_and_csv(tmp_path: Path):
     assert "FAIL" in body
     csv_body = csv_path.read_text(encoding="utf-8-sig")
     assert "LED-红" in csv_body
+    assert "整机编号" in csv_body
+
+
+def test_export_follows_language(tmp_path: Path):
+    import i18n
+    i18n.set_lang(i18n.EN)
+    r = report.TestReport(device_sn="SN2")
+    r.add_item("led_red", "manual").mark(report.PASSED, "ok")
+    body = r.to_text()
+    assert "Serial no." in body
+    assert "LED - Red" in body
+    assert "Wiring Check Report" in body

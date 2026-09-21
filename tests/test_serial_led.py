@@ -83,6 +83,9 @@ def test_led_port_label():
                            is_led_controller=True, version="FY-LED-V6.5")
     assert "COM3" in p.label
     assert "LED控制器" in p.label
+    import i18n
+    i18n.set_lang(i18n.EN)
+    assert "LED controller" in p.label
 
 
 def test_probe_in_place_fy_version():

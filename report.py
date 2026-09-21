@@ -6,18 +6,27 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+
+def _display_item_name(name: str) -> str:
+    import i18n
+    key = f"item.{name}"
+    if key in i18n.STRINGS.get(i18n.lang(), {}):
+        return i18n.item_name(name)
+    return name
+
+
 PASSED = "PASS"
 FAILED = "FAIL"
-PENDING = "待测"
-SKIPPED = "跳过"
+PENDING = "PENDING"
+SKIPPED = "SKIPPED"
 
 
 @dataclass
 class TestItemResult:
     """单个测试项的结果。"""
-    name: str                     # 测试项名称，如 "LED-红色"
+    name: str                     # 测试项 ID，如 "led_red"；导出时再翻译
     method: str                   # auto=自动判定 / manual=人工确认
-    status: str = PENDING         # PASS / FAIL / 待测 / 跳过
+    status: str = PENDING         # PASS / FAIL / PENDING / SKIPPED
     detail: str = ""              # 判定依据或人工备注
     timestamp: str = ""
 
@@ -78,21 +87,23 @@ class TestReport:
     # ---- 导出 -----------------------------------------------------------
 
     def to_text(self) -> str:
+        import i18n
+        blank = i18n.t("report.blank")
         lines = [
             "=" * 56,
-            "WinAutoTest 部件连线检测报告",
+            i18n.t("report.title"),
             "=" * 56,
-            f"整机编号: {self.device_sn or '(未填写)'}",
-            f"操作员:   {self.operator or '(未填写)'}",
-            f"开始时间: {self.started_at}",
-            f"结束时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"总判定:   {self.overall}  "
-            f"(通过 {self.passed_count} / 失败 {self.failed_count} "
-            f"/ 共 {len(self.items)} 项)",
+            f"{i18n.t('report.sn')}: {self.device_sn or blank}",
+            f"{i18n.t('report.operator')}:   {self.operator or blank}",
+            f"{i18n.t('report.started')}: {self.started_at}",
+            f"{i18n.t('report.ended')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"{i18n.t('report.overall')}:   {i18n.status_label(self.overall)}  "
+            f"{i18n.t('report.counts', passed=self.passed_count, failed=self.failed_count, total=len(self.items))}",
             "-" * 56,
         ]
         for item in self.items:
-            line = f"[{item.status:>4}] {item.name}"
+            line = (f"[{i18n.status_label(item.status):>8}] "
+                    f"{_display_item_name(item.name)}")
             if item.detail:
                 line += f"  | {item.detail}"
             if item.timestamp:
@@ -118,13 +129,23 @@ class TestReport:
         path = out_dir / f"report_{sn}_{stamp}.csv"
         with path.open("w", newline="", encoding="utf-8-sig") as f:
             writer = csv.writer(f)
-            writer.writerow(["整机编号", self.device_sn])
-            writer.writerow(["操作员", self.operator])
-            writer.writerow(["开始时间", self.started_at])
-            writer.writerow(["总判定", self.overall])
+            import i18n
+            writer.writerow([i18n.t("report.sn"), self.device_sn])
+            writer.writerow([i18n.t("report.operator"), self.operator])
+            writer.writerow([i18n.t("report.started"), self.started_at])
+            writer.writerow([i18n.t("report.overall"), i18n.status_label(self.overall)])
             writer.writerow([])
-            writer.writerow(["测试项", "判定方式", "结果", "详情", "时间"])
+            writer.writerow([
+                i18n.t("report.col_item"), i18n.t("report.col_method"),
+                i18n.t("report.col_result"), i18n.t("report.col_detail"),
+                i18n.t("report.col_time"),
+            ])
             for item in self.items:
-                writer.writerow([item.name, item.method, item.status,
-                                 item.detail, item.timestamp])
+                writer.writerow([
+                    _display_item_name(item.name),
+                    i18n.method_label(item.method),
+                    i18n.status_label(item.status),
+                    item.detail,
+                    item.timestamp,
+                ])
         return path
